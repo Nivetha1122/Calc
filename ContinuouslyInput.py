@@ -37,3 +37,39 @@ if st.button("Send"):
         
         # Clear input after each submission
         st.experimental_rerun()
+#llm
+from langchain.chains import LLMChain
+from langchain.llms import AzureOpenAI
+from langchain.prompts import PromptTemplate
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from azure.search.documents import SearchClient
+
+# Initialize Azure OpenAI
+llm = AzureOpenAI(
+    deployment_name="your-deployment-name",
+    model="text-davinci-003",
+    temperature=0.7,
+    max_tokens=1000,
+)
+
+# Initialize Azure AI Search Client
+search_client = SearchClient(endpoint="your-search-endpoint", index_name="your-index-name", credential="your-credentials")
+
+# Query Azure AI Search
+search_results = search_client.search(query="Your search query")
+
+# Chunking and Filtering
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=100)
+chunks = []
+for result in search_results:
+    chunks.extend(text_splitter.split_text(result['content']))
+
+# Filtering chunks (example: based on keyword)
+filtered_chunks = [chunk for chunk in chunks if "relevant_keyword" in chunk]
+
+# Prompt Construction
+prompt = f"User Query: {user_query}\n\nRelevant Results:\n{'\n'.join(filtered_chunks[:3])}"
+
+# Run the LLM
+response = llm(prompt)
+print(response)
